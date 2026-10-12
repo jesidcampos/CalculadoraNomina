@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Calculadora de Nómina</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #eef2f7; display: flex; justify-content: center; padding: 40px; margin: 0; }
+        .card { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); width: 520px; }
+        h1 { margin-top: 0; color: #28a745; }
+        label { display: block; margin-top: 12px; font-weight: bold; font-size: 14px; }
+        input { width: 100%; padding: 8px; margin-top: 4px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; }
+        button { margin-top: 20px; padding: 12px; width: 100%; background: #28a745; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 16px; }
+        button:hover { background: #1e7e34; }
+        .resultado { margin-top: 20px; background: #f8f9fa; padding: 15px; border-radius: 8px; }
+        .fila { display: flex; justify-content: space-between; margin: 6px 0; padding: 3px 0; }
+        .total { font-weight: bold; color: #28a745; font-size: 20px; border-top: 2px solid #28a745; padding-top: 10px; margin-top: 10px; }
+        .deduccion { color: #dc3545; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>💰 Calculadora de Nómina</h1>
+        <label>Nombre del colaborador</label>
+        <input id="nombre" value="Juan Pérez">
+
+        <label>Salario básico Mensual</label>
+        <input id="salario" type="number" value="2000000">
+
+        <label>Días Laborados</label>
+        <input id="dias" type="number" value="30">
+
+        <label>Horas extras</label>
+        <input id="horasExtras" type="number" value="0">
+
+        <label>Valor por hora extra</label>
+        <input id="valorHoraExtra" type="number" value="0">
+
+        <label>Bonificaciones</label>
+        <input id="bonificaciones" type="number" value="0">
+
+        <label>Otras deducciones</label>
+        <input id="deducciones" type="number" value="0">
+
+        <button onclick="calcular()">Calcular Nómina</button>
+        <div id="resultado"></div>
+    </div>
+
+    <script>
+        async function calcular() {
+            const data = {
+                nombre: document.getElementById('nombre').value,
+                salarioBasico: parseFloat(document.getElementById('salario').value),
+                diasTrabajados: parseInt(document.getElementById('dias').value),
+                horasExtras: parseFloat(document.getElementById('horasExtras').value),
+                valorHoraExtra: parseFloat(document.getElementById('valorHoraExtra').value),
+                bonificaciones: parseFloat(document.getElementById('bonificaciones').value),
+                deducciones: parseFloat(document.getElementById('deducciones').value)
+            };
+
+            const res = await fetch('/api/nomina/calcular', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+
+            const r = await res.json();
+            const div = document.getElementById('resultado');
+
+            if(r.error){
+                div.innerHTML = `<p style="color:red">${r.error}</p>`;
+                return;
+            }
+
+            const fmt = (n) => '$' + n.toLocaleString('es-CO');
+
+            div.innerHTML = `
+                <div class="resultado">
+                    <h3>${r.empleado}</h3>
+                    <div class="fila"><span>Salario proporcional:</span><span>${fmt(r.salarioProporcional)}</span></div>
+                    <div class="fila"><span>Horas extras:</span><span>${fmt(r.pagoHorasExtras)}</span></div>
+                    <div class="fila"><span>Bonificaciones:</span><span>${fmt(r.bonificaciones)}</span></div>
+                    <div class="fila"><span>Total devengado:</span><span>${fmt(r.totalDevengado)}</span></div>
+                    <div class="fila deduccion"><span>Salud (4%):</span><span>${fmt(r.deduccionSalud)}</span></div>
+                    <div class="fila deduccion"><span>Pensión (4%):</span><span>${fmt(r.deduccionPension)}</span></div>
+                    <div class="fila deduccion"><span>Otras deducciones:</span><span>${fmt(r.otrasDeducciones)}</span></div>
+                    <div class="fila total"><span>Neto a pagar:</span><span>${fmt(r.netoPagar)}</span></div>
+                </div>
+            `;
+        }
+    </script>
+</body>
+</html>
